@@ -101,6 +101,7 @@ class Ui_Main(object):
                                     "color:white;\n"
                                     "")
         self.songName.setObjectName("songName")
+        self.songName.setText("暂无媒体 - 空白" + "       ")
 
         # 歌曲信息 QLabel
         self.songInfo = QtWidgets.QLabel(self.central)
@@ -315,8 +316,6 @@ class Ui_Main(object):
         self.play.clicked.connect(self.play.update)  # type: ignore
         QtCore.QMetaObject.connectSlotsByName(Main)
 
-        self.songName.setText("暂无媒体 - 空白" + "       ")
-
         self.songName_timer = QTimer(self)
         self.songName_timer.start(900)  # 设置定时器间隔，单位为毫秒
 
@@ -420,6 +419,30 @@ class Ui_Main(object):
         self.bean.set_volume(value)
         self.change_sound_icon()
 
+    def update_ui(self):
+        """
+        页面更新器，更新该页面的封面、标题、音乐简介、和音乐总时长
+        """
+
+        # 更新封面
+        if self.config.music_info.album_cover is None:
+            self.diskPlay.setPixmap(QtGui.QPixmap("resources/default.png"))
+        else:
+            self.diskPlay.setPixmap(bit_to_map(self.config.music_info.album_cover))
+
+        # 更新标题
+        if self.config.music_info.title is None:
+            self.songName.setText("暂无媒体 - 空白" + "       ")
+        else:
+            self.songName.setText(self.config.music_info.title + "        ")
+
+        # 更新总时间
+        self.music_length = self.config.music_info.music_length / 1000
+        self.timeAll.setText(format_time(self.music_length))
+
+        # 更新简介
+        self.songInfo.setText(self.config.music_info.get_info_str())
+
     def switch_sound(self):
         """
         音量更新器，实时更新当前播放文件的音量大小，并根据情况修改静音时的音量键图标
@@ -457,30 +480,6 @@ class Ui_Main(object):
             self.sound.setIcon(icon5)
             self.sound.setIconSize(QtCore.QSize(20, 20))
 
-    def update_ui(self):
-        """
-        页面更新器，更新该页面的封面、标题、音乐简介、和音乐总时长
-        """
-
-        # 更新封面
-        if self.config.music_info.album_cover is None:
-            self.diskPlay.setPixmap(QtGui.QPixmap("resources/default.png"))
-        else:
-            self.diskPlay.setPixmap(bit_to_map(self.config.music_info.album_cover))
-
-        # 更新标题
-        if self.config.music_info.title is None:
-            self.songName.setText("暂无媒体 - 空白" + "       ")
-        else:
-            self.songName.setText(self.config.music_info.title + "        ")
-
-        # 更新总时间
-        self.music_length = self.config.music_info.music_length / 1000
-        self.timeAll.setText(format_time(self.music_length))
-
-        # 更新简介
-        self.songInfo.setText(self.config.music_info.get_info_str())
-
     def scroll_title(self):
         """
         标题滚动器，根据计时器实时修改标题文字排版，达成假滚动动态效果
@@ -505,9 +504,10 @@ class Ui_Main(object):
         """
         音乐切换器，根据combobox选择情况调用相应参数进行切换
         """
+
         if self.music_list and self.config:
             self.music_stop()
-            r_num = 1
+            r_num = value
             if self.switch_status == "B":
                 # 禁止出现0随机
                 non_zero_range = (list(range(-len(self.music_list), 0))
